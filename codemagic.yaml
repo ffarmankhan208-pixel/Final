@@ -8,9 +8,16 @@ workflows:
     scripts:
       - name: Grant gradlew permission
         script: chmod +x ./gradlew
+
       - name: Clean project
         script: ./gradlew clean
-      - name: Build APK
+
+      - name: Build Debug APK
         script: ./gradlew assembleDebug
+
+      - name: Build Release APK
+        script: ./gradlew assembleRelease
+
     artifacts:
       - app/build/outputs/apk/debug/app-debug.apk
+      - app/build/outputs/apk/release/app-release.apk
