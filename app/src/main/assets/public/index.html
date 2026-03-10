@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy xxxxx.xZ — Grand Unified Auto-Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #02050d;
+  --bg2:      #060b18;
+  --panel:    #080e1c;
+  --panel2:   #0c1526;
+  --border:   #111d33;
+  --border2:  #1c2e4a;
+  --blue:     #1a8fff;
+  --blue2:    #00c8f0;
+  --blue-dim: #0a3a60;
+  --blue-glow:rgba(26,143,255,0.18);
+  --red:      #ff2d55;
+  --red2:     #ff6b80;
+  --red-dim:  #5a0018;
+  --red-glow: rgba(255,45,85,0.18);
+  --green:    #00e896;
+  --green2:   #30ff9a;
+  --green-dim:#004a30;
+  --gold:     #ffcc00;
+  --gold-dim: #3a2e00;
+  --gold-glow:rgba(255,204,0,0.18);
+  --purple:   #a855f7;
+  --teal:     #00b4b4;
+  --text:     #b8cce4;
+  --text-dim: #3d5a80;
+  --text-dim2:#526e8a;
+  --text-hi:  #e8f4ff;
+  --font-mono:'JetBrains Mono', monospace;
+  --font-hdr: 'Orbitron', sans-serif;
+  --font-body:'Space Grotesk', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-mono);overflow-x:hidden}
+
+/* SCAN LINES */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 90% 50% at 50% -5%,rgba(26,143,255,.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 90% 100%,rgba(255,45,85,.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:rgba(8,14,28,.97);backdrop-filter:blur(12px);position:sticky;top:0;z-index:200}
+.hdr-logo{display:flex;align-items:center;gap:12px}
+.logo-hex{width:40px;height:40px;background:var(--panel2);border:1.5px solid var(--blue);display:grid;place-items:center;font-family:var(--font-hdr);font-size:12px;font-weight:900;color:var(--blue);clip-path:polygon(20% 0%,80% 0%,100% 20%,100% 80%,80% 100%,20% 100%,0% 80%,0% 20%);box-shadow:0 0 16px var(--blue-glow)}
+.logo-title{font-family:var(--font-hdr);font-size:13px;font-weight:800;letter-spacing:3px;color:var(--text-hi)}
+.logo-sub{font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:16px}
+.conn-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--border2);background:var(--panel2);font-size:10px;letter-spacing:1px}
+.conn-led{width:7px;height:7px;border-radius:50%;background:var(--text-dim);transition:.3s}
+.conn-led.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+.conn-led.wait{background:var(--gold);animation:blink .7s infinite}
+.conn-led.err{background:var(--red)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.bal{font-family:var(--font-hdr);font-size:12px;color:var(--gold);letter-spacing:1px}
+
+/* ── MAIN GRID ── */
+.grid{display:grid;grid-template-columns:272px 1fr 264px;min-height:calc(100vh - 57px);background:var(--border)}
+
+/* ── PANELS ── */
+.pnl{background:var(--panel);padding:16px;overflow-y:auto}
+.pnl-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-family:var(--font-hdr);font-size:9px;font-weight:600;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase}
+.pnl-hdr::before{content:'';flex-shrink:0;width:3px;height:10px;background:var(--blue)}
+.pnl-hdr.red::before{background:var(--red)}
+.pnl-hdr.gold::before{background:var(--gold)}
+.pnl-hdr.green::before{background:var(--green)}
+
+/* ── FORM ELEMENTS ── */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase}
+.fg input,.fg select{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:8px 10px;font-family:var(--font-mono);font-size:11px;outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-glow)}
+.fg select option{background:var(--panel2)}
+.hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+.btn{width:100%;padding:10px;font-family:var(--font-hdr);font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;border:none;transition:.2s;text-transform:uppercase}
+.btn-conn{background:var(--blue);color:#000}
+.btn-conn:hover{filter:brightness(1.2)}
+.btn-conn.disc{background:rgba(255,45,85,.15);border:1px solid var(--red);color:var(--red)}
+.btn-auto{background:transparent;border:1px solid var(--green);color:var(--green)}
+.btn-auto:hover{background:var(--green);color:#000}
+.btn-auto.stop{border-color:var(--red);color:var(--red)}
+.btn-auto.stop:hover{background:var(--red);color:#fff}
+
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:11px}
+.tog{position:relative;width:40px;height:20px}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:var(--border2);cursor:pointer;transition:.25s;border-radius:20px}
+.tog-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--text-dim);transition:.25s;border-radius:50%}
+input:checked+.tog-sl{background:var(--blue-dim)}
+input:checked+.tog-sl:before{transform:translateX(20px);background:var(--blue)}
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--border);margin-bottom:12px}
+.mtab{padding:8px;text-align:center;font-size:10px;cursor:pointer;background:var(--bg);color:var(--text-dim);letter-spacing:1px;transition:.2s}
+.mtab.on{background:var(--panel2);color:var(--blue);border-bottom:2px solid var(--blue)}
+.trade-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.t-up{background:rgba(0,232,150,.08);border:1.5px solid var(--green);color:var(--green);padding:16px;font-family:var(--font-hdr);font-size:15px;font-weight:900;cursor:pointer;transition:.2s;letter-spacing:1px}
+.t-up:hover:not(:disabled){background:var(--green);color:#000;box-shadow:0 0 24px rgba(0,232,150,.4)}
+.t-dn{background:rgba(255,45,85,.08);border:1.5px solid var(--red);color:var(--red);padding:16px;font-family:var(--font-hdr);font-size:15px;font-weight:900;cursor:pointer;transition:.2s;letter-spacing:1px}
+.t-dn:hover:not(:disabled){background:var(--red);color:#fff;box-shadow:0 0 24px rgba(255,45,85,.4)}
+button:disabled{opacity:.3;cursor:not-allowed}
+.stat-row{display:flex;justify-content:space-between;font-size:10px;padding:5px 0;border-bottom:1px solid var(--border)}
+.sv{color:var(--text-hi);font-weight:600}
+.sv.up{color:var(--green)}
+.sv.dn{color:var(--red)}
+
+/* ── CENTER SECTIONS ── */
+.c-wrap{background:var(--panel);display:flex;flex-direction:column;gap:1px;background:var(--border)}
+.c-sec{background:var(--panel);padding:14px 18px}
+
+/* ── DIGIT STREAM ── */
+.ds-bar{background:var(--bg2);border:1px solid var(--border);padding:12px;min-height:76px;position:relative;overflow:hidden}
+.ds{display:flex;gap:5px;overflow-x:auto;align-items:flex-end;padding-bottom:16px;scrollbar-width:thin}
+.db{min-width:44px;height:44px;display:grid;place-items:center;font-family:var(--font-hdr);font-size:17px;font-weight:900;flex-shrink:0;position:relative;border-radius:3px;transition:all .3s;animation:popIn .25s ease-out}
+@keyframes popIn{from{transform:scale(.5) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.db.B{background:rgba(26,143,255,.1);border:1.5px solid var(--blue);color:var(--blue)}
+.db.R{background:rgba(255,45,85,.1);border:1.5px solid var(--red);color:var(--red)}
+.db.glow{box-shadow:0 0 18px currentColor,0 0 6px currentColor}
+.db-lbl{position:absolute;bottom:-14px;font-size:7px;letter-spacing:1px;font-family:var(--font-mono);font-weight:400;opacity:.5;white-space:nowrap}
+.db-pos{position:absolute;top:-14px;font-size:7px;color:var(--text-dim);font-family:var(--font-mono)}
+/* Level markers on digits */
+.db.upper-lv::after{content:'▲';position:absolute;top:-18px;font-size:8px;color:var(--blue);letter-spacing:0}
+.db.lower-lv::after{content:'▼';position:absolute;top:-18px;font-size:8px;color:var(--red)}
+
+/* ── WORM HEAD INDICATOR ── */
+.head-box{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.head-pill{padding:6px 14px;font-family:var(--font-hdr);font-size:10px;font-weight:700;letter-spacing:2px;border:1px solid;transition:.4s}
+.head-GREEN{background:rgba(0,232,150,.1);border-color:var(--green);color:var(--green);box-shadow:0 0 12px rgba(0,232,150,.2)}
+.head-BLUE{background:rgba(26,143,255,.12);border-color:var(--blue);color:var(--blue);box-shadow:0 0 12px var(--blue-glow)}
+.head-RED{background:rgba(255,45,85,.12);border-color:var(--red);color:var(--red);box-shadow:0 0 12px var(--red-glow)}
+.head-WAIT{background:rgba(255,204,0,.06);border-color:var(--gold);color:var(--gold)}
+.level-display{display:flex;gap:10px;font-size:10px}
+.lv-b{color:var(--blue)}
+.lv-r{color:var(--red)}
+
+/* ── AXIS CHART ── */
+.chart-box{background:var(--bg2);border:1px solid var(--border);position:relative}
+canvas{display:block;width:100%}
+
+/* ── PREDICTION ── */
+.pred-box{background:var(--panel2);border:1px solid var(--border2);padding:14px 16px;display:flex;gap:16px;align-items:flex-start}
+.pred-ring{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;border:2px solid var(--border2);transition:.4s;position:relative}
+.pred-ring.UP{background:rgba(0,232,150,.08);border-color:var(--green);color:var(--green);box-shadow:0 0 24px rgba(0,232,150,.25),inset 0 0 12px rgba(0,232,150,.05)}
+.pred-ring.DOWN{background:rgba(255,45,85,.08);border-color:var(--red);color:var(--red);box-shadow:0 0 24px rgba(255,45,85,.25)}
+.pred-ring.WAIT{background:rgba(255,204,0,.06);border-color:var(--gold);color:var(--gold)}
+.pred-ring-inner{font-family:var(--font-hdr);font-size:11px;font-weight:900;letter-spacing:1px;text-align:center;line-height:1.2}
+.pred-ring-icon{font-size:20px;display:block}
+.pred-data{flex:1}
+.pred-label{font-family:var(--font-hdr);font-size:9px;letter-spacing:3px;color:var(--text-dim);margin-bottom:6px}
+.pred-reason{font-size:10px;line-height:1.6;color:var(--text)}
+.conf-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;font-size:9px;letter-spacing:2px;margin-top:6px;text-transform:uppercase}
+.conf-HIGH{background:rgba(0,232,150,.08);border:1px solid var(--green);color:var(--green)}
+.conf-MEDIUM{background:rgba(255,204,0,.08);border:1px solid var(--gold);color:var(--gold)}
+.conf-LOW{background:rgba(61,90,128,.1);border:1px solid var(--text-dim);color:var(--text-dim)}
+.conf-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.strength-bar{display:flex;gap:3px;margin-top:8px;align-items:center}
+.strength-seg{width:20px;height:4px;border-radius:2px;background:var(--border2);transition:.3s}
+.strength-seg.lit.g{background:var(--green)}
+.strength-seg.lit.y{background:var(--gold)}
+.strength-seg.lit.r{background:var(--red)}
+
+/* ── RULE BREAKDOWN ── */
+.rule-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rule-card{background:var(--bg2);border:1px solid var(--border);padding:8px 10px;transition:.3s}
+.rule-card.triggered{border-color:var(--blue);background:rgba(26,143,255,.04)}
+.rule-card.fired-UP{border-color:var(--green)!important;background:rgba(0,232,150,.06)!important}
+.rule-card.fired-DOWN{border-color:var(--red)!important;background:rgba(255,45,85,.06)!important}
+.rule-id{font-family:var(--font-hdr);font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px}
+.rule-id.active{color:var(--blue)}
+.rule-res{font-size:11px;font-weight:700}
+.rule-res.UP{color:var(--green)}
+.rule-res.DOWN{color:var(--red)}
+.rule-res.N{color:var(--text-dim)}
+.rule-detail{font-size:9px;color:var(--text-dim);margin-top:2px;line-height:1.3}
+
+/* ── WINDOW ANALYSIS ── */
+.win-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);min-height:56px}
+.wd{font-family:var(--font-hdr);font-size:20px;font-weight:900;transition:.3s}
+.wd.B{color:var(--blue);text-shadow:0 0 10px var(--blue)}
+.wd.R{color:var(--red);text-shadow:0 0 10px var(--red)}
+.w-sep{color:var(--border2);font-size:10px}
+.win-meta{font-size:9px;color:var(--text-dim);display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+
+/* ── AI PANEL ── */
+.ai-box{background:var(--bg2);border:1px solid var(--border2);padding:14px}
+.ai-input-row{display:flex;gap:6px;margin-bottom:10px}
+.ai-input{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:8px 10px;font-family:var(--font-mono);font-size:11px;outline:none}
+.ai-input:focus{border-color:var(--blue)}
+.ai-btn{padding:8px 14px;background:var(--purple);border:none;color:#fff;font-family:var(--font-hdr);font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap;transition:.2s}
+.ai-btn:hover{filter:brightness(1.2)}
+.ai-btn:disabled{opacity:.4;cursor:not-allowed}
+.ai-key-row{display:flex;gap:6px;margin-bottom:10px}
+.ai-resp{background:var(--bg);border:1px solid var(--border);padding:10px;font-size:10px;line-height:1.7;max-height:160px;overflow-y:auto;color:var(--text);min-height:60px}
+.ai-resp.loading{color:var(--text-dim);animation:pulse2 1s infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── CONTRACT BANNER ── */
+.contract-banner{display:none;background:rgba(255,204,0,.06);border:1px solid var(--gold);padding:8px 14px;margin-bottom:10px;font-size:10px;align-items:center;justify-content:space-between}
+.contract-banner.show{display:flex}
+.cb-led{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:blink .8s infinite;flex-shrink:0;margin-right:8px}
+
+/* ── TRADE LOG ── */
+.log-pnl{display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border)}
+.log-body{flex:1;overflow-y:auto;max-height:calc(100vh - 200px)}
+.te{padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;transition:background .2s;cursor:default}
+.te:hover{background:var(--panel2)}
+.te-hdr{display:flex;justify-content:space-between;margin-bottom:4px}
+.te-time{color:var(--text-dim);font-size:9px}
+.te-dir{font-family:var(--font-hdr);font-size:9px;font-weight:700;letter-spacing:1px}
+.te-dir.UP{color:var(--green)}
+.te-dir.DOWN{color:var(--red)}
+.te-res{font-weight:700;font-size:10px}
+.te-res.win{color:var(--green)}
+.te-res.loss{color:var(--red)}
+.te-res.open{color:var(--gold)}
+.te-seq{color:var(--text-dim);font-size:9px;margin-top:2px}
+.te-rules{color:var(--purple);font-size:8px;margin-top:2px;letter-spacing:.5px}
+.log-empty{padding:30px 16px;text-align:center;color:var(--text-dim);font-size:10px;line-height:2}
+.pnl-footer{background:var(--panel2);border-top:1px solid var(--border);padding:12px 14px}
+.pnl-footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pfi{text-align:center}
+.pfi-lbl{font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-bottom:3px}
+.pfi-val{font-family:var(--font-hdr);font-size:12px;font-weight:700}
+
+/* ── NOTIF ── */
+.notif{position:fixed;bottom:20px;right:20px;background:var(--panel2);border:1px solid var(--border2);border-left:3px solid transparent;padding:10px 16px;font-size:11px;max-width:280px;z-index:9000;animation:popIn .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.notif.ok{border-left-color:var(--green)}
+.notif.err{border-left-color:var(--red)}
+.notif.info{border-left-color:var(--blue)}
+.notif.warn{border-left-color:var(--gold)}
+
+/* ── TICK INFO BAR ── */
+.tick-bar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:10px;padding:8px 0}
+.ti{display:flex;align-items:center;gap:5px}
+.ti-lbl{color:var(--text-dim)}
+.ti-val{color:var(--text-hi);font-weight:500}
+
+/* ── BREAKOUT PANEL ── */
+.breakout-box{background:rgba(26,143,255,.04);border:1px solid var(--blue-dim);padding:8px 12px;font-size:10px;display:none}
+.breakout-box.show{display:block}
+.bo-label{font-family:var(--font-hdr);font-size:9px;letter-spacing:2px;margin-bottom:4px}
+
+/* ── OPEN CONTRACT PANEL ── */
+.oc-panel{background:rgba(255,204,0,.04);border:1px solid var(--gold-dim);padding:8px 12px;font-size:10px;display:none;margin-bottom:8px}
+.oc-panel.show{display:block}
+
+/* ── SCROLL SNAP ── */
+.right-pnl{display:flex;flex-direction:column}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="logo-hex">xZ</div>
+    <div>
+      <div class="logo-title">STRATEGY xxxxx.xZ</div>
+      <div class="logo-sub">GRAND UNIFIED AUTO-BOT — ALL SOURCES MERGED</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="conn-pill">
+      <div class="conn-led" id="connLed"></div>
+      <span id="connTxt" style="color:var(--text-dim)">OFFLINE</span>
+    </div>
+    <div class="bal" id="balDisp">— USD</div>
+  </div>
+</header>
+
+<!-- ══════════ MAIN GRID ══════════ -->
+<div class="grid">
+
+<!-- ════════ LEFT ════════ -->
+<aside class="pnl" style="border-right:1px solid var(--border);overflow-y:auto">
+
+  <div class="pnl-hdr">Connection</div>
+  <div class="fg"><label>Deriv API Token (Live)</label><input type="password" id="tok" placeholder="Enter API token..."></div>
+  <div class="fg"><label>App ID</label><input id="appId" value="1089"></div>
+  <button class="btn btn-conn" id="connBtn" onclick="toggleConn()">CONNECT LIVE</button>
+
+  <div class="hr"></div>
+  <div class="pnl-hdr">Market</div>
+  <div class="fg"><label>Volatility Index</label>
+    <select id="sym">
+      <option value="R_10">Volatility 10 (R_10)</option>
+      <option value="R_25">Volatility 25 (R_25)</option>
+      <option value="R_50" selected>Volatility 50 (R_50)</option>
+      <option value="R_75">Volatility 75 (R_75)</option>
+      <option value="R_100">Volatility 100 (R_100)</option>
+      <option value="1HZ10V">Vol 10 (1s)</option>
+      <option value="1HZ25V">Vol 25 (1s)</option>
+      <option value="1HZ50V">Vol 50 (1s)</option>
+      <option value="1HZ75V">Vol 75 (1s)</option>
+      <option value="1HZ100V">Vol 100 (1s)</option>
+    </select>
+  </div>
+  <div class="fg"><label>Currency</label>
+    <select id="cur"><option>USD</option><option>EUR</option><option>GBP</option><option>BTC</option></select>
+  </div>
+
+  <div class="hr"></div>
+  <div class="pnl-hdr">Trade Settings</div>
+  <div class="fg"><label>Stake (USD)</label><input type="number" id="stake" value="1" min="0.35" step="0.1"></div>
+  <div class="fg"><label>Duration (ticks)</label>
+    <select id="dur"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select>
+  </div>
+  <div class="fg"><label>Analysis Window (ticks)</label>
+    <select id="winSize">
+      <option value="3">3-tick (Expert)</option>
+      <option value="4">4-tick (Intermediate)</option>
+      <option value="5" selected>5-tick (Recommended ★)</option>
+      <option value="7">7-tick (Advanced)</option>
+    </select>
+  </div>
+  <div class="fg"><label>Min Confidence to Trade</label>
+    <select id="minConf">
+      <option value="LOW">Any (LOW+)</option>
+      <option value="MEDIUM">MEDIUM+</option>
+      <option value="HIGH" selected>HIGH only</option>
+    </select>
+  </div>
+
+  <div class="tog-row"><span>Martingale</span><label class="tog"><input type="checkbox" id="mart"><span class="tog-sl"></span></label></div>
+  <div class="fg" id="martRow" style="display:none"><label>Multiplier</label><input type="number" id="martMult" value="2" min="1.1" max="5" step="0.1"></div>
+  <div class="tog-row"><span>Stop Loss</span><label class="tog"><input type="checkbox" id="useSL"><span class="tog-sl"></span></label></div>
+  <div class="fg" id="slRow" style="display:none"><label>Max Loss $</label><input type="number" id="slVal" value="10"></div>
+  <div class="tog-row"><span>Take Profit</span><label class="tog"><input type="checkbox" id="useTP"><span class="tog-sl"></span></label></div>
+  <div class="fg" id="tpRow" style="display:none"><label>Target Profit $</label><input type="number" id="tpVal" value="20"></div>
+  <div class="tog-row"><span>Filter Flat (no trade)</span><label class="tog"><input type="checkbox" id="noFlat" checked><span class="tog-sl"></span></label></div>
+
+  <div class="hr"></div>
+  <div class="pnl-hdr">Mode</div>
+  <div class="mode-tabs">
+    <div class="mtab on" id="mManual" onclick="setMode('M')">MANUAL</div>
+    <div class="mtab" id="mAuto" onclick="setMode('A')">AUTO</div>
+  </div>
+  <div id="manDiv">
+    <p style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Place trades manually using analysis</p>
+    <div class="trade-btns">
+      <button class="t-up" id="bUp" onclick="manual('UP')" disabled>▲ UP</button>
+      <button class="t-dn" id="bDn" onclick="manual('DOWN')" disabled>▼ DN</button>
+    </div>
+  </div>
+  <div id="autoDiv" style="display:none">
+    <p style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Bot auto-trades on strategy signal</p>
+    <button class="btn btn-auto" id="autoBtn" onclick="toggleAuto()">START AUTO BOT</button>
+  </div>
+
+  <div class="hr"></div>
+  <div class="pnl-hdr">Session</div>
+  <div class="stat-row"><span style="color:var(--text-dim)">Trades</span><span class="sv" id="sTot">0</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">Wins</span><span class="sv up" id="sWin">0</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">Losses</span><span class="sv dn" id="sLoss">0</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">Win Rate</span><span class="sv" id="sWR">—</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">Net P&L</span><span class="sv" id="sPnL">$0.00</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">R3 Fired</span><span class="sv" style="color:var(--purple)" id="sR3">0</span></div>
+  <div class="stat-row"><span style="color:var(--text-dim)">R4(9) Fired</span><span class="sv" style="color:var(--gold)" id="sR4">0</span></div>
+
+</aside>
+
+<!-- ════════ CENTER ════════ -->
+<div class="c-wrap">
+
+  <!-- Tick bar + Digit stream -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="pnl-hdr" style="margin:0">Live Digit Stream</div>
+      <div class="tick-bar">
+        <div class="ti"><span class="ti-lbl">SYM</span><span class="ti-val" id="tSym">—</span></div>
+        <div class="ti"><span class="ti-lbl">LAST</span><span class="ti-val" id="tLast">—</span></div>
+        <div class="ti"><span class="ti-lbl">DIGIT</span><span class="ti-val" id="tDigit" style="font-family:var(--font-hdr);font-size:15px;font-weight:900">—</span></div>
+        <div class="ti"><span class="ti-lbl">WIN</span><span class="ti-val" id="tWin" style="color:var(--text-dim)">5</span></div>
+        <div class="ti"><span class="ti-lbl">TICKS</span><span class="ti-val" id="tCnt">0</span></div>
+      </div>
+    </div>
+    <div class="ds-bar"><div class="ds" id="dStream"><span style="font-size:10px;color:var(--text-dim)">Connect to receive live digits...</span></div></div>
+  </div>
+
+  <!-- Worm Head + Levels + Chart -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">WORM HEAD STATE</div>
+        <div class="head-pill head-WAIT" id="headPill">● WAIT</div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">LEVELS</div>
+        <div class="level-display">
+          <span class="lv-b">▲ Upper: <b id="upperLv">—</b></span>
+          <span class="lv-r">▼ Lower: <b id="lowerLv">—</b></span>
+        </div>
+      </div>
+      <div style="margin-left:auto">
+        <div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">ACE CARD (0)</div>
+        <div id="aceStatus" style="font-size:10px;color:var(--text-dim)">—</div>
+      </div>
+    </div>
+    <div class="chart-box">
+      <canvas id="chart" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- Breakout info -->
+  <div class="c-sec" style="padding-top:10px;padding-bottom:10px;border-bottom:1px solid var(--border)" id="boBand" style="display:none">
+    <div class="breakout-box show" id="boBox">
+      <div class="bo-label" style="color:var(--blue)">BREAKOUT DETECTED</div>
+      <div id="boDetail" style="font-size:10px;color:var(--text)"></div>
+    </div>
+  </div>
+
+  <!-- Analysis Window -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div class="pnl-hdr" style="margin-bottom:8px">Analysis Window</div>
+    <div class="win-row" id="winRow"><span style="font-size:10px;color:var(--text-dim)">Waiting...</span></div>
+    <div class="win-meta" id="winMeta"></div>
+  </div>
+
+  <!-- PREDICTION -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div class="pnl-hdr" style="margin-bottom:10px">Strategy Prediction</div>
+    <div class="pred-box">
+      <div class="pred-ring WAIT" id="predRing">
+        <div class="pred-ring-inner">
+          <span class="pred-ring-icon" id="predIcon">◦</span>
+          <span id="predText">WAIT</span>
+        </div>
+      </div>
+      <div class="pred-data">
+        <div class="pred-label">GRAND UNIFIED ANALYSIS (ALL SOURCES)</div>
+        <div class="pred-reason" id="predReason">Waiting for digit data...</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <span class="conf-badge conf-LOW" id="confBadge"><span class="conf-dot"></span>WAITING</span>
+          <div class="strength-bar" id="strengthBar">
+            <span style="font-size:9px;color:var(--text-dim)">STR:</span>
+            <div class="strength-seg" id="s1"></div>
+            <div class="strength-seg" id="s2"></div>
+            <div class="strength-seg" id="s3"></div>
+            <div class="strength-seg" id="s4"></div>
+            <div class="strength-seg" id="s5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULE BREAKDOWN — All 10 rules -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div class="pnl-hdr" style="margin-bottom:10px">Rule Engine Breakdown (All Sources)</div>
+    <div class="rule-grid" id="ruleGrid">
+      <div class="rule-card" id="rcR1"><div class="rule-id">R1 STEP</div><div class="rule-res N" id="rR1">—</div><div class="rule-detail" id="dR1">Step analysis</div></div>
+      <div class="rule-card" id="rcR2"><div class="rule-id">R2 INTERRUPT</div><div class="rule-res N" id="rR2">—</div><div class="rule-detail" id="dR2">Interrupt rule</div></div>
+      <div class="rule-card" id="rcR3"><div class="rule-id active">R3 PRESSURE★</div><div class="rule-res N" id="rR3">—</div><div class="rule-detail" id="dR3">Dominant digit</div></div>
+      <div class="rule-card" id="rcR4"><div class="rule-id">R4 REVERSAL-9</div><div class="rule-res N" id="rR4">—</div><div class="rule-detail" id="dR4">9 at end</div></div>
+      <div class="rule-card" id="rcR5"><div class="rule-id">R5 REPAINT</div><div class="rule-res N" id="rR5">—</div><div class="rule-detail" id="dR5">Breakout repaint</div></div>
+      <div class="rule-card" id="rcR6"><div class="rule-id">R6 POST-BO</div><div class="rule-res N" id="rR6">—</div><div class="rule-detail" id="dR6">After breakout</div></div>
+      <div class="rule-card" id="rcR7"><div class="rule-id">R7 GOLD(1-UNIT)</div><div class="rule-res N" id="rR7">—</div><div class="rule-detail" id="dR7">1-unit diff</div></div>
+      <div class="rule-card" id="rcC2"><div class="rule-id">C2 EXCEPTION</div><div class="rule-res N" id="rC2">—</div><div class="rule-detail" id="dC2">1,3,5+4/6</div></div>
+      <div class="rule-card" id="rcW1"><div class="rule-id">W1 VECTOR</div><div class="rule-res N" id="rW1">—</div><div class="rule-detail" id="dW1">Odd+Even vectors</div></div>
+      <div class="rule-card" id="rcW2"><div class="rule-id">W2 REPLACE</div><div class="rule-res N" id="rW2">—</div><div class="rule-detail" id="dW2">Trend replacement</div></div>
+    </div>
+  </div>
+
+  <!-- DeepSeek AI Panel -->
+  <div class="c-sec" style="border-bottom:1px solid var(--border)">
+    <div class="pnl-hdr" style="margin-bottom:10px"><span style="color:var(--purple)">●</span>&nbsp;DeepSeek AI Analysis</div>
+    <div class="ai-box">
+      <div class="ai-key-row">
+        <input class="ai-input" id="dsKey" type="password" placeholder="DeepSeek API key (sk-...)">
+        <button class="ai-btn" onclick="testAI()">TEST</button>
+      </div>
+      <div class="ai-input-row">
+        <input class="ai-input" id="dsSeq" placeholder="Manual sequence e.g. 3 7 4 9 2" value="">
+        <button class="ai-btn" id="aiBtnManual" onclick="askAI()">ANALYZE</button>
+      </div>
+      <div style="font-size:9px;color:var(--text-dim);margin-bottom:6px">Auto-feed: uses live window when connected</div>
+      <div class="ai-resp" id="aiResp">AI response will appear here...</div>
+    </div>
+  </div>
+
+  <!-- Last result -->
+  <div class="c-sec">
+    <div class="pnl-hdr" style="margin-bottom:8px">Last Contract</div>
+    <div id="lastRes" style="font-size:11px;color:var(--text-dim)">No trades yet.</div>
+  </div>
+
+</div><!-- end center -->
+
+<!-- ════════ RIGHT LOG ════════ -->
+<div class="right-pnl" style="border-left:1px solid var(--border)">
+  <div style="padding:14px 14px 0"><div class="pnl-hdr" style="margin-bottom:10px">Trade Log</div>
+
+    <!-- Open contract banner -->
+    <div class="oc-panel" id="ocPanel">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="cb-led"></div>
+        <span id="ocText" style="font-weight:600;color:var(--gold)">CONTRACT OPEN</span>
+      </div>
+      <div id="ocId" style="color:var(--text-dim);font-size:9px"></div>
+    </div>
+  </div>
+
+  <div class="log-body" id="logBody">
+    <div class="log-empty">No trades yet.<br><br>Connect your API token,<br>configure settings, and<br>start trading to see history.</div>
+  </div>
+
+  <div class="pnl-footer">
+    <div class="pnl-footer-grid">
+      <div class="pfi"><div class="pfi-lbl">NET P&L</div><div class="pfi-val" id="fpPnL" style="color:var(--text-hi)">$0.00</div></div>
+      <div class="pfi"><div class="pfi-lbl">WIN RATE</div><div class="pfi-val" id="fpWR" style="color:var(--text-hi)">—</div></div>
+      <div class="pfi"><div class="pfi-lbl">TRADES</div><div class="pfi-val" id="fpTot" style="color:var(--text-hi)">0</div></div>
+      <div class="pfi"><div class="pfi-lbl">STREAK</div><div class="pfi-val" id="fpStreak" style="color:var(--text-hi)">—</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end grid -->
+
+<script>
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  STRATEGY xxxxx.xZ — GRAND UNIFIED ENGINE                ║
+// ║  Sources: BinaryNumber101 + Nikolay + Nikolai + Binalgo  ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+// ── HELPERS ─────────────────────────────────────────────────
+const isEven = d => d % 2 === 0;
+const isOdd  = d => d % 2 !== 0;
+const zone   = d => isEven(d) ? 'BLUE' : 'RED';
+const yVal   = d => isEven(d) ? d : -d;   // Y-axis absolute position
+const yAbs   = d => d;                     // distance from X-axis = face value
+
+// ── 0 = ACE CARD (context-dependent) ────────────────────────
+// If 0 appears near large numbers (7,8,9) → treat as biggest
+// If 0 appears near small numbers (1,2,3) → treat as smallest
+function aceCardValue(digits, zeroIdx) {
+  const neighbors = digits.filter((d,i) => i !== zeroIdx && d > 0);
+  if (!neighbors.length) return 0;
+  const maxNeighbor = Math.max(...neighbors);
+  if (maxNeighbor >= 7) return 10; // Ace high — beats everything
+  if (maxNeighbor <= 3) return 0;  // Ace low
+  return maxNeighbor + 1;          // Context-dependent
+}
+
+// Effective pressure value (for Rule 3)
+function effectivePressure(digits, idx) {
+  const d = digits[idx];
+  if (d === 0) return aceCardValue(digits, idx);
+  return d;
+}
+
+// ════════════════════════════════════════════════════════════
+//  GRAND UNIFIED ANALYSIS ENGINE
+// ════════════════════════════════════════════════════════════
+class GrandUnifiedEngine {
+  constructor() {
+    this.history = [];
+    this.upperLevel = null; // blue dot (highest even seen)
+    this.lowerLevel = null; // red dot (highest odd seen = deepest into red zone)
+    this.totalTicks = 0;
+    this.r3Fires = 0;
+    this.r4Fires = 0;
+  }
+
+  addDigit(d) {
+    d = parseInt(d);
+    this.history.push(d);
+    if (this.history.length > 30) this.history.shift();
+    this.totalTicks++;
+    this.updateLevels();
+    return this.analyze();
+  }
+
+  // ── Level Tracking ───────────────────────────────────────
+  // Upper level = highest EVEN digit seen in recent window
+  // Lower level = highest ODD digit seen (deepest in red zone)
+  updateLevels() {
+    const recent = this.history.slice(-15);
+    const evens = recent.filter(d => isEven(d) && d > 0);
+    const odds  = recent.filter(d => isOdd(d));
+    this.upperLevel = evens.length ? Math.max(...evens) : null;
+    this.lowerLevel = odds.length  ? Math.max(...odds)  : null;
+  }
+
+  // ── Worm Head State ──────────────────────────────────────
+  // GREEN = between levels | BLUE = broke above upper | RED = broke below lower
+  getWormHead(window) {
+    if (!this.upperLevel || !this.lowerLevel || window.length < 3) return 'WAIT';
+    const head = window[window.length - 1];
+    // If head (even) >= upperLevel → broke above
+    if (isEven(head) && head >= this.upperLevel) return 'BLUE';
+    // If head (odd) >= lowerLevel → broke below
+    if (isOdd(head) && head >= this.lowerLevel) return 'RED';
+    return 'GREEN';
+  }
+
+  // ── Step Direction ───────────────────────────────────────
+  // A "step" = two consecutive digits of the SAME parity
+  // Returns {direction:'UP'|'DOWN'|null, a:n, b:n, type:'odd'|'even'}
+  getStep(type, digits) {
+    const filtered = digits.filter(d => (type==='odd' ? isOdd(d) : isEven(d)));
+    if (filtered.length < 2) return null;
+    const a = filtered[filtered.length - 2];
+    const b = filtered[filtered.length - 1];
+    // Y-axis direction
+    const yA = yVal(a), yB = yVal(b);
+    if (type === 'even') {
+      if (b > a) return {direction:'UP',   a, b, type};
+      if (b < a) return {direction:'DOWN', a, b, type};
+      return {direction:'FLAT', a, b, type};
+    } else { // odd — red zone: higher value = deeper down = DOWN
+      if (b > a) return {direction:'DOWN', a, b, type};
+      if (b < a) return {direction:'UP',   a, b, type};
+      return {direction:'FLAT', a, b, type};
+    }
+  }
+
+  // ── R1: Step Analysis ────────────────────────────────────
+  ruleR1(digits) {
+    const oddStep  = this.getStep('odd',  digits);
+    const evenStep = this.getStep('even', digits);
+    if (!oddStep || !evenStep) return null;
+    if (oddStep.direction === 'FLAT' || evenStep.direction === 'FLAT') return null;
+    const od = oddStep.direction, ed = evenStep.direction;
+    if (od === ed) {
+      return { prediction: od, reason: `R1: Odd step ${oddStep.a}→${oddStep.b} ${od}, Even ${evenStep.a}→${evenStep.b} ${ed} — BOTH ${od}`, conflict: false };
+    }
+    return { prediction: null, reason: `R1: CONFLICT — Odd ${od} vs Even ${ed} → use R2/R3`, conflict: true, oddStep, evenStep };
+  }
+
+  // ── R2: Interruption Rule ────────────────────────────────
+  // Even beaten ONLY by diff-color odd (and vice versa)
+  // Greater absolute Y-value wins
+  ruleR2(digits) {
+    if (digits.length < 2) return null;
+    const pairs = [];
+    for (let i = 1; i < digits.length; i++) {
+      const a = digits[i-1], b = digits[i];
+      if (isEven(a) !== isEven(b)) { // different character — potential interruption
+        pairs.push({a, b});
+      }
+    }
+    if (!pairs.length) return null;
+    const last = pairs[pairs.length - 1];
+    const {a, b} = last;
+    // Determine who wins (higher absolute value)
+    const pA = effectivePressure(digits, digits.indexOf(a));
+    const pB = effectivePressure(digits, digits.lastIndexOf(b));
+    if (pB > pA) {
+      const dir = isEven(b) ? 'UP' : 'DOWN';
+      return { prediction: dir, reason: `R2: ${b}(${zone(b)}) interrupts ${a}(${zone(a)}), ${b}>${a} → ${dir}` };
+    } else if (pA > pB) {
+      const dir = isEven(a) ? 'UP' : 'DOWN';
+      return { prediction: dir, reason: `R2: ${a}(${zone(a)}) resists ${b}, ${a}>${b} → ${dir}` };
+    }
+    return null;
+  }
+
+  // ── R3: Number Pressure (MOST IMPORTANT) ─────────────────
+  // Find highest digit. Only opp-character + diff-color can interrupt.
+  ruleR3(digits) {
+    if (digits.length < 2) return null;
+    const pressures = digits.map((d,i) => ({ d, p: effectivePressure(digits, i), i }));
+    const maxEntry = pressures.reduce((best, cur) => cur.p > best.p ? cur : best, pressures[0]);
+    const dominant = maxEntry.d;
+    const domP     = maxEntry.p;
+    const last     = digits[digits.length - 1];
+    const lastP    = effectivePressure(digits, digits.length - 1);
+
+    // Can the last digit interrupt the dominant?
+    const canInterrupt = isEven(dominant) !== isEven(last); // different character required
+    const doesInterrupt = canInterrupt && lastP > domP;
+
+    if (dominant === 0) {
+      // Ace Card — 0 is absolute highest
+      const aceP = aceCardValue(digits, maxEntry.i);
+      const dir  = isEven(last) ? 'DOWN' : 'UP'; // 0 ace in red zone = big DOWN pressure
+      return { prediction: dir, reason: `R3: 0=Ace Card (pressure=${aceP}) dominates → ${dir}` };
+    }
+
+    if (doesInterrupt) {
+      const dir = isEven(last) ? 'UP' : 'DOWN';
+      this.r3Fires++;
+      return { prediction: dir, reason: `R3: ${last} interrupts dominant ${dominant} (${last}>${dominant}) → ${dir}` };
+    } else {
+      const dir = isEven(dominant) ? 'UP' : 'DOWN';
+      this.r3Fires++;
+      return { prediction: dir, reason: `R3: ${dominant} dominates (not interrupted by ${last}) → ${dir}` };
+    }
+  }
+
+  // ── R4: Reversal by 9 ────────────────────────────────────
+  // 9 at end of window + no 0 before it = REVERSAL of current pressure
+  ruleR4(digits) {
+    if (digits.length < 2) return null;
+    const last = digits[digits.length - 1];
+    if (last !== 9) return null;
+    // Check no 0 before the 9
+    const before = digits.slice(0, -1);
+    if (before.includes(0)) return null;
+    // Determine current pressure before 9
+    const preBefore = before.filter(d => d > 0);
+    if (!preBefore.length) return null;
+    const maxBefore = Math.max(...preBefore.map((d,i) => effectivePressure(before, i)));
+    const majorityEven = before.filter(d=>isEven(d)&&d>0).length >= before.filter(d=>isOdd(d)).length;
+    // Reversal = opposite of current
+    const prediction = majorityEven ? 'DOWN' : 'UP';
+    this.r4Fires++;
+    return { prediction, reason: `R4: 9 at end (no 0 before) = REVERSAL of ${majorityEven?'UP':'DOWN'} pressure → ${prediction}` };
+  }
+
+  // ── R5: Repaint (Breakout) ────────────────────────────────
+  // Find the breakout point and compare before/after digit
+  ruleR5(digits, wormHead) {
+    if (wormHead === 'GREEN' || wormHead === 'WAIT') return null;
+    if (digits.length < 3) return null;
+
+    // Find the breakout digit (where head changed to BLUE or RED)
+    // Simplified: use last two digits of different parity
+    const n = digits.length;
+    let breakIdx = -1;
+    for (let i = n-1; i >= 1; i--) {
+      if (isEven(digits[i]) !== isEven(digits[i-1])) { breakIdx = i; break; }
+    }
+    if (breakIdx <= 0 || breakIdx >= n-1) return null;
+
+    const before = digits[breakIdx - 1];
+    const breakD = digits[breakIdx];
+    const after  = digits[breakIdx + 1] !== undefined ? digits[breakIdx + 1] : digits[n-1];
+
+    // Must be different character
+    if (isEven(before) === isEven(after)) return null;
+
+    const isBreakup = wormHead === 'BLUE';
+    let prediction;
+    if (isBreakup) {
+      prediction = after < before ? 'UP' : 'DOWN';
+    } else {
+      prediction = after > before ? 'UP' : 'DOWN';
+    }
+    return { prediction, reason: `R5 Repaint (${isBreakup?'Breakup':'Breakdown'}): before=${before} after=${after} → ${prediction}` };
+  }
+
+  // ── R6: After-Breakout (Green rules) ────────────────────
+  ruleR6(digits, wormHead) {
+    if (wormHead !== 'BLUE' && wormHead !== 'RED') return null;
+    // After breakout → apply green-head rules (R1-R4)
+    const r1 = this.ruleR1(digits);
+    const r3 = this.ruleR3(digits);
+    if (r3) return { prediction: r3.prediction, reason: `R6 Post-breakout (green rules): ${r3.reason}` };
+    if (r1 && r1.prediction) return { prediction: r1.prediction, reason: `R6 Post-breakout (R1): ${r1.reason}` };
+    return null;
+  }
+
+  // ── R7: Gold Rule 1-Unit Difference ─────────────────────
+  // Between levels: last higher Y = UP, lower Y = DOWN
+  // AT BREAKOUT: INVERTED!
+  ruleR7(digits, wormHead) {
+    if (digits.length < 2) return null;
+    const first = digits[0], last = digits[digits.length-1];
+    if (Math.abs(last - first) !== 1) {
+      // Check last two pairs
+      if (digits.length < 2) return null;
+      const a = digits[digits.length-2], b = digits[digits.length-1];
+      if (Math.abs(a - b) !== 1) return null;
+    }
+    const a = digits[0], b = digits[digits.length-1];
+    const diff = Math.abs(a - b);
+    if (diff !== 1) return null;
+
+    const yA = isEven(a) ? a : -a;
+    const yB = isEven(b) ? b : -b;
+    let prediction;
+    if (wormHead === 'GREEN') {
+      prediction = yB > yA ? 'UP' : 'DOWN';
+    } else {
+      // INVERTED at breakout!
+      prediction = yB > yA ? 'DOWN' : 'UP';
+    }
+    const invert = wormHead !== 'GREEN' ? ' [INVERTED at breakout]' : '';
+    return { prediction, reason: `R7 Gold 1-unit: ${a}→${b} (diff=1), Y: ${yA}→${yB}${invert} → ${prediction}` };
+  }
+
+  // ── C2: Exception (Crystal Algorithm) ───────────────────
+  // Pattern 1,3,5 followed by 6 → DOWN
+  // Pattern 1,3,5 followed by 4 → UP
+  ruleC2(digits) {
+    if (digits.length < 3) return null;
+    const last = digits[digits.length - 1];
+    const prev = digits.slice(-4, -1);
+    const allOdd135 = prev.every(d => [1,3,5].includes(d));
+    if (allOdd135 && last === 6) return { prediction: 'DOWN', reason: `C2 Exception: 1,3,5 run + 6 → DOWN` };
+    if (allOdd135 && last === 4) return { prediction: 'UP',   reason: `C2 Exception: 1,3,5 run + 4 → UP` };
+    // Also check: if trend is 1→3→5 ascending pattern
+    if (digits.length >= 3) {
+      const [x, y, z] = digits.slice(-3);
+      if ([1,3,5].includes(x) && [1,3,5].includes(y) && x < y && (z === 4 || z === 6)) {
+        const pred = z === 4 ? 'UP' : 'DOWN';
+        return { prediction: pred, reason: `C2: Odd run ${x}→${y}→${z} → ${pred}` };
+      }
+    }
+    return null;
+  }
+
+  // ── W1: Vector Rule (Worm) ───────────────────────────────
+  // Vector A (odd anomalous grow) + Vector B (even grow) = UP
+  ruleW1(digits) {
+    if (digits.length < 4) return null;
+    const [a, b, c, d] = digits.slice(-4);
+    // Pattern: odd↓ + even↑ = UP (anomalous)
+    if (isOdd(a) && isOdd(b) && a > b && isEven(c) && isEven(d) && c < d)
+      return { prediction:'UP',   reason:`W1: Odd↓(${a}→${b}) + Even↑(${c}→${d}) = UP [Rule#1A]` };
+    // Pattern: odd↓ + even↓ = DOWN
+    if (isOdd(a) && isOdd(b) && a > b && isEven(c) && isEven(d) && c > d)
+      return { prediction:'DOWN', reason:`W1: Odd↓(${a}→${b}) + Even↓(${c}→${d}) = DOWN [Rule#1B]` };
+    // All descending same character
+    if (a > b && b > c && c > d)
+      return { prediction:'DOWN', reason:`W1: All descending ${a}→${b}→${c}→${d} = DOWN [Rule#1C]` };
+    // 8 or 6 = reversal synonyms
+    if (d === 8 && isOdd(a) && isOdd(b) && a > b)
+      return { prediction:'UP',   reason:`W1: 8=reversal synonym → UP` };
+    if (d === 6 && isOdd(a) && isOdd(b) && a > b)
+      return { prediction:'UP',   reason:`W1: 6=reversal synonym → UP` };
+    return null;
+  }
+
+  // ── W2: Replacement Rule (Worm) ─────────────────────────
+  // 1,5 (odd growing) then 4,2 (even falling) = UP (1-5 main trend dominates)
+  // 1,5 (odd growing) then 6,8 (even growing) = DOWN (6,8 broke 5 blue down)
+  ruleW2(digits) {
+    if (digits.length < 4) return null;
+    // Find odd growing pair then even pair
+    for (let i = 0; i < digits.length - 3; i++) {
+      const [a, b, c, d] = digits.slice(i, i+4);
+      if (isOdd(a) && isOdd(b) && b > a) {
+        if (isEven(c) && isEven(d) && c > d)
+          return { prediction:'UP',   reason:`W2: Odd grow ${a}→${b} + Even fall ${c}→${d} → UP` };
+        if (isEven(c) && isEven(d) && d > c && d > b)
+          return { prediction:'DOWN', reason:`W2: Odd grow ${a}→${b} + Even ${c}→${d} breaks 5-blue → DOWN` };
+      }
+    }
+    return null;
+  }
+
+  // ── FLAT DETECTION ──────────────────────────────────────
+  isFlat(digits) {
+    if (digits.length < 4) return false;
+    const range = Math.max(...digits) - Math.min(...digits);
+    const allSame = digits.every(d => d === digits[0]);
+    return allSame || range <= 1;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  MAIN ANALYSIS — Grand Unified Decision
+  // ════════════════════════════════════════════════════════
+  analyze() {
+    const winSize = parseInt(document.getElementById('winSize').value) || 5;
+    if (this.history.length < winSize) {
+      return { prediction:null, confidence:'LOW', wormHead:'WAIT', reasons:[], rulesMap:{},
+        reason: `Need ${winSize - this.history.length} more digits (${winSize}-tick window)...` };
+    }
+
+    const window = this.history.slice(-winSize);
+    const wormHead = this.getWormHead(window);
+
+    // Flat check
+    const noFlat = document.getElementById('noFlat').checked;
+    if (noFlat && this.isFlat(window)) {
+      return { prediction:null, confidence:'LOW', wormHead, reasons:[], rulesMap:{},
+        reason: 'FLAT detected — no signal (flat filter active)' };
+    }
+
+    // Analysis start: find odd meets even
+    let startIdx = 0;
+    for (let i = 1; i < window.length; i++) {
+      if (isEven(window[i]) !== isEven(window[i-1])) { startIdx = i-1; break; }
+    }
+    const analysis = window.slice(startIdx);
+
+    // Run ALL rules
+    const r1 = this.ruleR1(analysis);
+    const r2 = this.ruleR2(analysis);
+    const r3 = this.ruleR3(analysis);     // MOST IMPORTANT
+    const r4 = this.ruleR4(analysis);
+    const r5 = this.ruleR5(analysis, wormHead);
+    const r6 = this.ruleR6(analysis, wormHead);
+    const r7 = this.ruleR7(analysis, wormHead);
+    const c2 = this.ruleC2(analysis);
+    const w1 = this.ruleW1(analysis);
+    const w2 = this.ruleW2(analysis);
+
+    const rulesMap = { R1:r1, R2:r2, R3:r3, R4:r4, R5:r5, R6:r6, R7:r7, C2:c2, W1:w1, W2:w2 };
+
+    // ── RULE PRIORITY & COMBINATION ─────────────────────────
+    // Priority order: R3 > R4 > R5/R6 (breakout) > R1 > R2 > R7 > C2 > W1 > W2
+    let votes = { UP:0, DOWN:0 };
+    const reasons = [];
+
+    // Weight each rule
+    const weights = { R3:3, R4:2, R5:2, R6:2, R1:1.5, R2:1, R7:1, C2:1, W1:1, W2:0.5 };
+    for (const [id, rule] of Object.entries(rulesMap)) {
+      if (!rule || !rule.prediction) continue;
+      votes[rule.prediction] += (weights[id] || 1);
+      reasons.push(rule.reason);
+    }
+
+    // R1 conflict resolution: use R3 to break tie
+    let prediction = null;
+    const isGreen = wormHead === 'GREEN';
+    const isBreakout = wormHead !== 'GREEN' && wormHead !== 'WAIT';
+
+    // If breakout → prioritize R5/R6
+    if (isBreakout && (r5 || r6)) {
+      const bRule = r5 || r6;
+      prediction = bRule.prediction;
+    } else {
+      // Normal → weighted majority, R3 overrides if strong
+      if (r3 && votes[r3.prediction] >= votes[r3.prediction === 'UP' ? 'DOWN' : 'UP']) {
+        prediction = r3.prediction;
+      } else if (votes.UP > votes.DOWN) prediction = 'UP';
+      else if (votes.DOWN > votes.UP) prediction = 'DOWN';
+      else if (r3) prediction = r3.prediction;
+      else if (r4) prediction = r4.prediction;
+      else if (r1 && r1.prediction) prediction = r1.prediction;
+    }
+
+    // Confidence
+    const dominant = prediction ? Math.floor(votes[prediction]) : 0;
+    let confidence = 'LOW';
+    if (dominant >= 4) confidence = 'HIGH';
+    else if (dominant >= 2) confidence = 'MEDIUM';
+
+    // Combined strength (for bar: 0-5)
+    const strength = Math.min(5, dominant);
+
+    return {
+      prediction, confidence, wormHead, reasons, rulesMap,
+      strength, votes, window, startIdx, analysis,
+      upperLevel: this.upperLevel, lowerLevel: this.lowerLevel,
+      reason: reasons.slice(0,3).join(' | ') || 'Insufficient pattern'
+    };
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  DEEPSEEK AI INTEGRATION — Complete Unified Prompt
+// ════════════════════════════════════════════════════════════
+const DS_SYSTEM = `You are an expert analyst of Strategy xxxxx.xZ (Grand Unified Edition).
+Sources: BinaryNumber101 (7 chapters), Worm Binary Software (Nikolay), Nikolai original, Binalgo Indonesian.
+
+AXIOM: Even(0,2,4,6,8)=BLUE=+Y=UP | Odd(1,3,5,7,9)=RED=-Y=DOWN
+0=ACE CARD: biggest near large numbers (7,8,9), smallest near small numbers
+Larger digit = more pressure in its direction.
+
+RULES (ALL MUST BE APPLIED):
+R1 STEP: Odd step UP + Even step UP → UP. Both DOWN → DOWN. Conflict → use R3.
+R2 INTERRUPT: Different character competes. Greater absolute Y-value wins. Same-color cannot interrupt.
+R3 PRESSURE (most important): Highest digit dominates. Only opp-char+diff-color can interrupt. 0=Ace.
+R4 REVERSAL-9: 9 at END of window + no 0 before = REVERSAL of current trend.
+R5 REPAINT: Breakup+after<before→UP. Breakup+after>before→DOWN. (Breakdown inverted.)
+R6 POST-BREAKOUT: After breakout → apply green rules (R1-R4).
+R7 GOLD 1-UNIT: Diff=1 between first+last. Last higher Y → UP (between levels). INVERTS at breakout!
+C2 EXCEPTION: 1,3,5 run + 6 → DOWN. 1,3,5 run + 4 → UP.
+W1 VECTOR: Odd anom.fall + Even rise → UP. Odd fall + Even fall → DOWN.
+W2 REPLACE: 1,5 then 4,2 → UP (odd dominant). 1,5 then 6,8 → DOWN (even broke through).
+
+WORM HEAD: GREEN=between levels(use R1-R4), BLUE=broke above(use R5-R6), RED=broke below(use R5-R6).
+
+OUTPUT STRICT JSON ONLY (no markdown):
+{"sequence":"...","worm_head":"GREEN|BLUE|RED","rules_triggered":["R1","R3"],"rule_details":{"R1":"...","R3":"..."},"dominant_digit":9,"conflict":false,"reasoning":"...","bet":"UP|DOWN","confidence":"HIGH|MEDIUM|LOW","strength":3}`;
+
+async function askAI(autoSeq) {
+  const key = document.getElementById('dsKey').value.trim();
+  if (!key) { notify('Enter DeepSeek API key first', 'warn'); return; }
+  const seq = autoSeq || document.getElementById('dsSeq').value.trim();
+  if (!seq) { notify('Enter a digit sequence', 'warn'); return; }
+
+  const btn = document.getElementById('aiBtnManual');
+  btn.disabled = true; btn.textContent = '...';
+  const respEl = document.getElementById('aiResp');
+  respEl.className = 'ai-resp loading';
+  respEl.textContent = 'Analyzing with DeepSeek AI...';
+
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role:'system', content: DS_SYSTEM }, { role:'user', content: `Analyze: ${seq}` }],
+        response_format: { type:'json_object' }, temperature: 0.05, max_tokens: 800
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.choices[0].message.content;
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    respEl.className = 'ai-resp';
+    const color = parsed.bet === 'UP' ? 'var(--green)' : 'var(--red)';
+    respEl.innerHTML = `
+      <div style="font-family:var(--font-hdr);font-size:13px;font-weight:900;color:${color};margin-bottom:6px">
+        ${parsed.bet === 'UP' ? '▲ UP' : '▼ DOWN'} — ${parsed.confidence}
+      </div>
+      <div style="color:var(--text-dim);font-size:9px;margin-bottom:4px">Head: ${parsed.worm_head} | Rules: ${(parsed.rules_triggered||[]).join(', ')}</div>
+      <div style="font-size:10px;line-height:1.6;color:var(--text)">${parsed.reasoning}</div>
+    `;
+    notify(`AI: ${parsed.bet} (${parsed.confidence})`, parsed.bet==='UP'?'ok':'err');
+  } catch(e) {
+    respEl.className = 'ai-resp';
+    respEl.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    notify('AI error: ' + e.message, 'err');
+  }
+  btn.disabled = false; btn.textContent = 'ANALYZE';
+}
+
+async function testAI() {
+  document.getElementById('dsSeq').value = '8 2 7 2 3';
+  await askAI();
+}
+
+// ════════════════════════════════════════════════════════════
+//  DERIV WEBSOCKET CONNECTION
+// ════════════════════════════════════════════════════════════
+let ws=null, connected=false, autoOn=false, tradeMode='M';
+let openContract=null, pendingProp=null, currentStake=1, lastLossStake=null;
+const engine = new GrandUnifiedEngine();
+let bubbles = [], session = { total:0, wins:0, losses:0, pnl:0, streak:0, streakDir:'' };
+let r3Count=0, r4Count=0;
+
+function toggleConn() {
+  if (connected) { ws && ws.close(); return; }
+  const tok   = document.getElementById('tok').value.trim();
+  const appId = document.getElementById('appId').value.trim() || '1089';
+  if (!tok) { notify('Enter API token first', 'err'); return; }
+  setLED('wait','CONNECTING...');
+  ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${appId}`);
+  ws.onopen    = () => ws.send(JSON.stringify({ authorize: tok }));
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+  ws.onclose   = () => {
+    connected = false; setLED('','OFFLINE');
+    document.getElementById('connBtn').textContent='CONNECT LIVE';
+    document.getElementById('connBtn').className='btn btn-conn';
+    if (autoOn) stopAuto();
+    notify('Disconnected', 'info');
+  };
+  ws.onerror = () => { setLED('err','ERROR'); notify('WebSocket error', 'err'); };
+}
+
+function handleMsg(d) {
+  const t = d.msg_type;
+  if (t==='authorize') {
+    if (d.error) { notify(d.error.message,'err'); setLED('err','AUTH FAIL'); return; }
+    connected = true;
+    setLED('live','LIVE');
+    document.getElementById('connBtn').textContent='DISCONNECT';
+    document.getElementById('connBtn').className='btn btn-conn disc';
+    document.getElementById('balDisp').textContent = `${parseFloat(d.authorize.balance).toFixed(2)} ${d.authorize.currency}`;
+    notify(`Connected: ${d.authorize.loginid}`, 'ok');
+    ws.send(JSON.stringify({balance:1,subscribe:1}));
+    subTicks();
+    enableBtns(true);
+  }
+  if (t==='balance') {
+    document.getElementById('balDisp').textContent = `${parseFloat(d.balance.balance).toFixed(2)} ${d.balance.currency}`;
+  }
+  if (t==='tick') onTick(d.tick);
+  if (t==='proposal') {
+    if (d.error) { notify('Proposal: '+d.error.message,'err'); pendingProp=null; return; }
+    if (pendingProp) { buy(d.proposal.id, d.proposal.ask_price, pendingProp.dir); pendingProp=null; }
+  }
+  if (t==='buy') {
+    if (d.error) { notify('Buy: '+d.error.message,'err'); return; }
+    openContract = d.buy.contract_id;
+    showOC(d.buy);
+    notify(`Contract #${d.buy.contract_id}`, 'ok');
+    ws.send(JSON.stringify({proposal_open_contract:1,contract_id:d.buy.contract_id,subscribe:1}));
+  }
+  if (t==='proposal_open_contract') onContractUpdate(d.proposal_open_contract);
+}
+
+function subTicks() {
+  const sym = document.getElementById('sym').value;
+  ws.send(JSON.stringify({ticks:sym,subscribe:1}));
+  engine.history = []; engine.upperLevel=null; engine.lowerLevel=null;
+  bubbles=[]; document.getElementById('dStream').innerHTML='';
+  document.getElementById('tCnt').textContent='0';
+}
+
+function onTick(tick) {
+  const q = tick.quote.toString();
+  const d = parseInt(q[q.length-1]);
+
+  document.getElementById('tSym').textContent  = tick.symbol;
+  document.getElementById('tLast').textContent = tick.quote;
+  const dEl = document.getElementById('tDigit');
+  dEl.textContent = d;
+  dEl.style.color = isEven(d) ? 'var(--blue)' : 'var(--red)';
+  document.getElementById('tCnt').textContent = parseInt(document.getElementById('tCnt').textContent||0)+1;
+  document.getElementById('tWin').textContent = document.getElementById('winSize').value;
+
+  // Add to engine
+  const analysis = engine.addDigit(d);
+  addBubble(d, analysis.upperLevel, analysis.lowerLevel);
+  drawChart();
+  updateUI(analysis, d);
+
+  // Auto-AI feed (every 5 ticks)
+  const aiKey = document.getElementById('dsKey').value.trim();
+  if (aiKey && engine.history.length % 5 === 0 && engine.history.length >= 5) {
+    const seq = engine.history.slice(-5).join(' ');
+    document.getElementById('dsSeq').value = seq;
+  }
+
+  // Auto trading
+  if (autoOn && !openContract && analysis.prediction) {
+    const minConf = document.getElementById('minConf').value;
+    const confOrder = {LOW:0, MEDIUM:1, HIGH:2};
+    if (confOrder[analysis.confidence] >= confOrder[minConf]) {
+      executeTrade(analysis.prediction, analysis);
+    }
+  }
+}
+
+// ── UI Updates ───────────────────────────────────────────
+function updateUI(a, lastDigit) {
+  // Worm head
+  const hp = document.getElementById('headPill');
+  hp.className = `head-pill head-${a.wormHead}`;
+  hp.textContent = `● ${a.wormHead}`;
+
+  // Levels
+  document.getElementById('upperLv').textContent = a.upperLevel || '—';
+  document.getElementById('lowerLv').textContent = a.lowerLevel || '—';
+
+  // Ace card status
+  const aceEl = document.getElementById('aceStatus');
+  if (a.window && a.window.includes(0)) {
+    const aceP = aceCardValue(a.window, a.window.lastIndexOf(0));
+    aceEl.textContent = `0 present (val≈${aceP})`;
+    aceEl.style.color = aceP >= 7 ? 'var(--gold)' : 'var(--text-dim)';
+  } else aceEl.textContent = '—';
+
+  // Analysis window
+  const wr = document.getElementById('winRow');
+  if (a.window && a.window.length) {
+    wr.innerHTML = a.window.map((d,i) => {
+      const isLast = i === a.window.length-1;
+      return `<span class="wd ${isEven(d)?'B':'R'}" style="font-size:${isLast?'24px':'18px'};opacity:${0.4+(i/a.window.length)*.6}">${d}</span>${i<a.window.length-1?'<span class="w-sep">·</span>':''}`;
+    }).join('');
+    const meta = document.getElementById('winMeta');
+    const evens = a.window.filter(d=>isEven(d)), odds = a.window.filter(d=>isOdd(d));
+    meta.innerHTML = `
+      <span>Evens: ${evens.join(',') || 'none'}</span>
+      <span>Odds: ${odds.join(',') || 'none'}</span>
+      <span>Max: ${Math.max(...a.window)}</span>
+      <span>0 in window: ${a.window.includes(0)?'YES ⚡':'no'}</span>
+    `;
+  }
+
+  // Prediction ring
+  const pr = document.getElementById('predRing');
+  pr.className = `pred-ring ${a.prediction || 'WAIT'}`;
+  document.getElementById('predIcon').textContent = a.prediction==='UP' ? '▲' : a.prediction==='DOWN' ? '▼' : '◦';
+  document.getElementById('predText').textContent = a.prediction || 'WAIT';
+  document.getElementById('predReason').textContent = a.reason || 'Analyzing...';
+
+  // Confidence badge
+  const cb = document.getElementById('confBadge');
+  cb.className = `conf-badge conf-${a.confidence}`;
+  cb.innerHTML = `<span class="conf-dot"></span>${a.confidence}${a.prediction?' — '+a.prediction:''}`;
+
+  // Strength bar
+  const str = a.strength || 0;
+  for (let i=1;i<=5;i++) {
+    const el = document.getElementById(`s${i}`);
+    el.className = `strength-seg${i<=str?' lit '+(str>=4?'g':str>=2?'y':'r'):''}`;
+  }
+
+  // Rule cards
+  const ruleKeys = {R1:'R1',R2:'R2',R3:'R3',R4:'R4',R5:'R5',R6:'R6',R7:'R7',C2:'C2',W1:'W1',W2:'W2'};
+  for (const [key, id] of Object.entries(ruleKeys)) {
+    const rule = a.rulesMap ? a.rulesMap[key] : null;
+    const resEl = document.getElementById(`r${id}`);
+    const detEl = document.getElementById(`d${id}`);
+    const cardEl = document.getElementById(`rc${id}`);
+    if (!resEl) continue;
+    if (!rule || !rule.prediction) {
+      resEl.textContent='—'; resEl.className='rule-res N';
+      cardEl.className='rule-card';
+      detEl.textContent=`${key}: no signal`;
+    } else {
+      resEl.textContent=rule.prediction; resEl.className=`rule-res ${rule.prediction}`;
+      cardEl.className=`rule-card fired-${rule.prediction}`;
+      detEl.textContent=rule.reason.substring(0,50);
+    }
+  }
+
+  // Breakout box
+  const boBox = document.getElementById('boBox');
+  if (a.wormHead !== 'GREEN' && a.wormHead !== 'WAIT') {
+    boBox.parentElement.style.display='block';
+    document.getElementById('boDetail').textContent = `Head repainted ${a.wormHead} — Applying breakout rules (R5/R6). Repaint before/after comparison active.`;
+  } else {
+    boBox.parentElement.style.display='none';
+  }
+
+  // Update rule fire counters
+  if (a.rulesMap && a.rulesMap.R3 && a.rulesMap.R3.prediction) {
+    r3Count++;document.getElementById('sR3').textContent=r3Count;
+  }
+  if (a.rulesMap && a.rulesMap.R4 && a.rulesMap.R4.prediction) {
+    r4Count++;document.getElementById('sR4').textContent=r4Count;
+  }
+}
+
+// ── Digit Bubbles ────────────────────────────────────────
+function addBubble(d, upper, lower) {
+  const container = document.getElementById('dStream');
+  const el = document.createElement('div');
+  const isUp = isEven(d);
+  el.className = `db ${isUp?'B':'R'} glow`;
+  const isUpper = isUp && d === upper;
+  const isLower = !isUp && d === lower;
+  if (isUpper) el.classList.add('upper-lv');
+  if (isLower) el.classList.add('lower-lv');
+  el.innerHTML = `${d}<span class="db-lbl">${isUp?'BLUE':'RED'}</span>`;
+  container.appendChild(el);
+  setTimeout(()=>el.classList.remove('glow'), 600);
+  bubbles.push(el);
+  if (bubbles.length > 35) { bubbles.shift().remove(); }
+  container.scrollLeft = container.scrollWidth;
+}
+
+// ── Worm Chart ───────────────────────────────────────────
+function drawChart() {
+  const canvas = document.getElementById('chart');
+  const W = canvas.offsetWidth || 600;
+  const H = 130;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const digits = engine.history.slice(-28);
+  if (!digits.length) return;
+  const midY = H/2, unitH = (H/2-12)/9, cellW = Math.max((W-40)/digits.length, 18);
+
+  // Grid
+  ctx.strokeStyle='rgba(26,40,60,.6)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(30,midY); ctx.lineTo(W-5,midY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(30,5); ctx.lineTo(30,H-5); ctx.stroke();
+
+  // Zone labels
+  ctx.font='8px JetBrains Mono'; ctx.textAlign='left';
+  ctx.fillStyle='rgba(26,143,255,.4)'; ctx.fillText('+Y',2,12);
+  ctx.fillStyle='rgba(255,45,85,.4)';  ctx.fillText('-Y',2,H-4);
+  ctx.fillStyle='rgba(90,112,128,.4)'; ctx.fillText('0',22,midY-2);
+
+  // Level lines
+  if (engine.upperLevel) {
+    const uly = midY - engine.upperLevel*unitH;
+    ctx.strokeStyle='rgba(26,143,255,.3)'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(30,uly); ctx.lineTo(W,uly); ctx.stroke();
+    ctx.fillStyle='rgba(26,143,255,.5)'; ctx.fillText(`U:${engine.upperLevel}`,2,uly+3);
+  }
+  if (engine.lowerLevel) {
+    const lly = midY + engine.lowerLevel*unitH;
+    ctx.strokeStyle='rgba(255,45,85,.3)';
+    ctx.beginPath(); ctx.moveTo(30,lly); ctx.lineTo(W,lly); ctx.stroke();
+    ctx.fillStyle='rgba(255,45,85,.5)'; ctx.fillText(`L:${engine.lowerLevel}`,2,lly+3);
+    ctx.setLineDash([]);
+  }
+  ctx.setLineDash([]);
+
+  // Points
+  const pts = digits.map((d,i) => {
+    const x = 38 + i*cellW;
+    const y = isEven(d) ? midY - d*unitH : midY + d*unitH;
+    return {x, y, d};
+  });
+
+  // Connecting lines
+  for (let i=1;i<pts.length;i++) {
+    const p=pts[i-1], c=pts[i];
+    ctx.beginPath(); ctx.strokeStyle=isEven(c.d)?'rgba(26,143,255,.5)':'rgba(255,45,85,.5)';
+    ctx.lineWidth=1.5; ctx.moveTo(p.x,p.y); ctx.lineTo(c.x,c.y); ctx.stroke();
+  }
+
+  // Dots + labels
+  pts.forEach((p,i) => {
+    const isL = i===pts.length-1;
+    const col = isEven(p.d) ? (isL?'#1a8fff':'rgba(26,143,255,.7)') : (isL?'#ff2d55':'rgba(255,45,85,.7)');
+    ctx.beginPath(); ctx.arc(p.x,p.y,isL?5:3,0,Math.PI*2);
+    ctx.fillStyle=col;
+    if (isL) { ctx.shadowColor=col; ctx.shadowBlur=10; }
+    ctx.fill(); ctx.shadowBlur=0;
+    if (i%4===0||isL) {
+      ctx.fillStyle=col; ctx.font=isL?'bold 10px JetBrains Mono':'8px JetBrains Mono';
+      ctx.textAlign='center'; ctx.fillText(p.d,p.x,p.y-8);
+    }
+    // Green head marker
+    if (isL) {
+      ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2);
+      ctx.fillStyle='#00e896'; ctx.shadowColor='#00e896'; ctx.shadowBlur=8;
+      ctx.fill(); ctx.shadowBlur=0;
+    }
+  });
+}
+
+// ── Trade Execution ──────────────────────────────────────
+function executeTrade(dir, analysis) {
+  if (!connected) { notify('Not connected','err'); return; }
+  if (openContract) { notify('Contract already open','info'); return; }
+
+  const baseStake = parseFloat(document.getElementById('stake').value)||1;
+  const useMart   = document.getElementById('mart').checked;
+  const stake     = (useMart && lastLossStake) ? lastLossStake * (parseFloat(document.getElementById('martMult').value)||2) : baseStake;
+  currentStake    = stake;
+
+  // Risk management
+  if (document.getElementById('useSL').checked && session.pnl <= -parseFloat(document.getElementById('slVal').value)) {
+    notify('Stop loss reached — stopping','warn'); stopAuto(); return;
+  }
+  if (document.getElementById('useTP').checked && session.pnl >= parseFloat(document.getElementById('tpVal').value)) {
+    notify('Take profit reached — stopping','ok'); stopAuto(); return;
+  }
+
+  pendingProp = { dir };
+  ws.send(JSON.stringify({
+    proposal:1, amount:stake, basis:'stake',
+    contract_type: dir==='UP'?'CALL':'PUT',
+    currency: document.getElementById('cur').value,
+    duration: parseInt(document.getElementById('dur').value)||1,
+    duration_unit:'t', symbol: document.getElementById('sym').value
+  }));
+  addTradeLog({time:new Date(), dir, stake, analysis});
+}
+
+function buy(id, price, dir) {
+  ws.send(JSON.stringify({buy:id, price}));
+}
+
+function manual(dir) { executeTrade(dir, null); }
+
+function onContractUpdate(c) {
+  if (!c) return;
+  if (c.is_sold || c.status==='sold') {
+    openContract=null;
+    document.getElementById('ocPanel').classList.remove('show');
+    const profit = parseFloat(c.profit)||0;
+    const won = profit>0;
+    session.total++; session.pnl+=profit;
+    if (won) { session.wins++; session.streak = session.streakDir==='W'?session.streak+1:1; session.streakDir='W'; lastLossStake=null; }
+    else { session.losses++; session.streak=session.streakDir==='L'?session.streak+1:1; session.streakDir='L'; lastLossStake=currentStake; }
+    updateLogResult(c.contract_id, won, profit);
+    updateStats();
+    document.getElementById('lastRes').innerHTML = `<span style="font-family:var(--font-hdr);font-size:16px;font-weight:900;color:${won?'var(--green)':'var(--red)'}">
+      ${won?'✓ WIN':'✗ LOSS'}</span>&nbsp;&nbsp;<span style="color:${won?'var(--green)':'var(--red)'}">${profit>=0?'+':''}$${Math.abs(profit).toFixed(2)}</span>
+      <span style="color:var(--text-dim);margin:0 10px">|</span><span style="color:var(--text-dim)">#${c.contract_id}</span>`;
+    notify(`${won?'WIN':'LOSS'} ${profit>=0?'+':''}$${Math.abs(profit).toFixed(2)}`, won?'ok':'err');
+  }
+}
+
+function showOC(b) {
+  const p = document.getElementById('ocPanel'); p.classList.add('show');
+  document.getElementById('ocText').textContent = `OPEN — ${b.longcode || '#'+b.contract_id}`;
+  document.getElementById('ocId').textContent = `ID: ${b.contract_id}`;
+}
+
+// ── Log ──────────────────────────────────────────────────
+function addTradeLog({time, dir, stake, analysis}) {
+  const lb = document.getElementById('logBody');
+  if (lb.querySelector('.log-empty')) lb.innerHTML='';
+  const el = document.createElement('div');
+  el.className='te'; el.dataset.cid = Date.now();
+  const seq = engine.history.slice(-5).join(' ');
+  const rules = analysis ? Object.entries(analysis.rulesMap||{}).filter(([,r])=>r&&r.prediction).map(([k])=>k).join(',') : '';
+  el.innerHTML=`
+    <div class="te-hdr">
+      <span class="te-time">${time.toLocaleTimeString()}</span>
+      <span class="te-dir ${dir}">${dir==='UP'?'▲':'▼'} ${dir}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      <span class="te-seq">Seq: ${seq}</span>
+      <span class="te-res open" id="tres-${el.dataset.cid}">OPEN</span>
+    </div>
+    <div class="te-rules">Rules: ${rules || '—'} | $${stake.toFixed(2)}</div>
+  `;
+  lb.insertBefore(el, lb.firstChild);
+}
+
+function updateLogResult(cid, won, profit) {
+  const opens = document.querySelectorAll('.te-res.open');
+  if (opens.length) {
+    const el = opens[0];
+    el.textContent = `${won?'WIN':'LOSS'} ${profit>=0?'+':''}$${Math.abs(profit).toFixed(2)}`;
+    el.className = `te-res ${won?'win':'loss'}`;
+  }
+}
+
+// ── Stats ────────────────────────────────────────────────
+function updateStats() {
+  const wr = session.total ? ((session.wins/session.total)*100).toFixed(1)+'%' : '—';
+  document.getElementById('sTot').textContent   = session.total;
+  document.getElementById('sWin').textContent   = session.wins;
+  document.getElementById('sLoss').textContent  = session.losses;
+  document.getElementById('sWR').textContent    = wr;
+  const pEl = document.getElementById('sPnL');
+  pEl.textContent=`$${session.pnl.toFixed(2)}`;
+  pEl.className=`sv ${session.pnl>0?'up':session.pnl<0?'dn':''}`;
+  document.getElementById('fpPnL').textContent=`$${session.pnl.toFixed(2)}`;
+  document.getElementById('fpPnL').style.color=session.pnl>=0?'var(--green)':'var(--red)';
+  document.getElementById('fpWR').textContent=wr;
+  document.getElementById('fpTot').textContent=session.total;
+  document.getElementById('fpStreak').textContent=session.streak?(session.streakDir==='W'?`+${session.streak}W`:`-${session.streak}L`):'—';
+  document.getElementById('fpStreak').style.color=session.streakDir==='W'?'var(--green)':'var(--red)';
+}
+
+// ── Mode & Auto ──────────────────────────────────────────
+function setMode(m) {
+  tradeMode=m;
+  document.getElementById('mManual').className='mtab'+(m==='M'?' on':'');
+  document.getElementById('mAuto').className='mtab'+(m==='A'?' on':'');
+  document.getElementById('manDiv').style.display=m==='M'?'block':'none';
+  document.getElementById('autoDiv').style.display=m==='A'?'block':'none';
+}
+function toggleAuto() { autoOn ? stopAuto() : startAuto(); }
+function startAuto() {
+  if (!connected){notify('Connect first','err');return;}
+  autoOn=true;
+  document.getElementById('autoBtn').textContent='STOP AUTO BOT';
+  document.getElementById('autoBtn').className='btn btn-auto stop';
+  notify('Auto bot running...','info');
+}
+function stopAuto() {
+  autoOn=false;
+  const b=document.getElementById('autoBtn');
+  if(b){b.textContent='START AUTO BOT';b.className='btn btn-auto';}
+}
+function enableBtns(s) {
+  document.getElementById('bUp').disabled=!s;
+  document.getElementById('bDn').disabled=!s;
+}
+function setLED(cls, txt) {
+  document.getElementById('connLed').className='conn-led '+cls;
+  const el=document.getElementById('connTxt');
+  el.textContent=txt;
+  el.style.color=cls==='live'?'var(--green)':cls==='err'?'var(--red)':cls==='wait'?'var(--gold)':'var(--text-dim)';
+}
+
+// ── Toggle rows ──────────────────────────────────────────
+document.getElementById('mart').addEventListener('change', function(){document.getElementById('martRow').style.display=this.checked?'block':'none'});
+document.getElementById('useSL').addEventListener('change', function(){document.getElementById('slRow').style.display=this.checked?'block':'none'});
+document.getElementById('useTP').addEventListener('change', function(){document.getElementById('tpRow').style.display=this.checked?'block':'none'});
+document.getElementById('sym').addEventListener('change', function(){if(connected)subTicks()});
+
+// ── Notify ───────────────────────────────────────────────
+let nt;
+function notify(msg, type='info') {
+  const e=document.querySelector('.notif'); if(e)e.remove(); clearTimeout(nt);
+  const el=document.createElement('div');
+  el.className=`notif ${type==='ok'?'ok':type==='err'?'err':type==='warn'?'warn':'info'}`;
+  el.textContent=msg; document.body.appendChild(el);
+  nt=setTimeout(()=>el.remove(),4200);
+}
+
+// ── Init ─────────────────────────────────────────────────
+window.addEventListener('load',()=>setTimeout(drawChart,100));
+window.addEventListener('resize',drawChart);
+</script>
+</body>
+</html>
